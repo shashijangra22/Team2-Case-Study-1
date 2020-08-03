@@ -5,6 +5,9 @@ import (
 	CustomerServices "Team2CaseStudy1/pkg/Customer/Services"
 	OrderModels "Team2CaseStudy1/pkg/Order/Models"
 	OrderServices "Team2CaseStudy1/pkg/Order/Services"
+	RestaurantModels "Team2CaseStudy1/pkg/Restaurant/Models"
+	RestaurantServices "Team2CaseStudy1/pkg/Restaurant/Services"
+
 	"Team2CaseStudy1/pkg/OrderProto/orderpb"
 	"context"
 	"fmt"
@@ -21,6 +24,7 @@ import (
 var db *dynamodb.DynamoDB
 var allCustomers []*orderpb.Customer
 var allOrders []*orderpb.Order
+var allRest []*orderpb.Restaurant
 
 type server struct{}
 
@@ -39,9 +43,9 @@ func (*server) GetCustomers(ctx context.Context, req *orderpb.NoParamRequest) (*
 }
 
 // fetch restaurants from db and give it as response to client
-func (*server) GetRestaurants(ctx context.Context, req *orderpb.NoParamRequest) (*orderpb.RestaurantResponse, error) {
+func (*server) GetRestaurants(ctx context.Context, req *orderpb.NoParamRequest) (*orderpb.RestaurantAllResponse, error) {
 	fmt.Println("GetRestaurants Function called... ")
-	res := &orderpb.RestaurantResponse{DummyRes: "Hi this is a test call"}
+	res := &orderpb.RestaurantAllResponse{Res: allRest}
 	return res, nil
 }
 
@@ -57,6 +61,20 @@ func (*server) GetACustomer(ctx context.Context, req *orderpb.SpecificCustomerRe
 	return res, nil
 
 }
+
+func (*server) GetARestaurant(ctx context.Context, req *orderpb.SpecificRestaurantRequest) (*orderpb.SpecificRestaurantResponse, error) {
+
+	fmt.Println("GetACustomer Function called... ")
+
+	id := req.GetId()
+	restDetails := RestaurantServices.GetSpecificRestaurantDetails(db, id)
+
+	res := &orderpb.SpecificRestaurantResponse{Res: restDetails}
+
+	return res, nil
+
+}
+
 
 func (*server) GetAnOrder(ctx context.Context, req *orderpb.SpecificOrderRequest) (*orderpb.SpecificOrderResponse, error) {
 
@@ -166,9 +184,63 @@ func (*server) AddCustomer(ctx context.Context, req *orderpb.CustomerRequest) (*
 }
 
 // add restaurant to db
-func (*server) AddRestaurant(ctx context.Context, req *orderpb.RestaurantRequest) (*orderpb.PostResponse, error) {
+func (*server) AddRestaurant(ctx context.Context, req *orderpb.RestaurantRequest) (*orderpb.RestaurantPostResponse, error) {
 	fmt.Println("AddRestaurant Function called... ")
-	res := &orderpb.PostResponse{Res: "Hi this is a test call"}
+
+
+	id := req.Rest.GetId()
+	categ := req.Rest.GetCategory()
+	avail := req.Rest.GetAvailability()
+	name := req.Rest.GetName()
+	itemlist := req.Rest.ItemLine
+	rating := req.Rest.GetRating()
+
+	var itemline []*orderpb.Item
+	var itemlinestruct []RestaurantModels.Item
+
+	for i := range itemlist {
+		itemname := itemlist[i].GetName()
+		itemprice := itemlist[i].GetPrice()
+		itemline = append(itemline, &orderpb.Item{
+			Name:  itemname,
+			Price: itemprice,
+		})
+		itemlinestruct = append(itemlinestruct, RestaurantModels.Item{
+			Name:  itemname,
+			Price: itemprice,
+		})
+	}
+
+	restDetails := RestaurantModels.Rest{
+		ID: id,
+		Name: name,
+		Availability: avail,
+		Items: itemlinestruct,
+		Rating: rating,
+		Category: categ,
+	}
+
+	allRest = append(allRest, &orderpb.Restaurant{
+		Id: id,
+		Name: name,
+		Availability: avail,
+		ItemLine: itemline,
+		Rating: rating,
+		Category: categ,
+	})
+
+	res := &orderpb.RestaurantPostResponse{Res: &orderpb.Restaurant{
+		Id: id,
+		Name: name,
+		Availability: avail,
+		ItemLine: itemline,
+		Rating: rating,
+		Category: categ,
+	}}
+
+	fmt.Println("adding %v\n",restDetails)
+	RestaurantServices.AddRstDetails(db, restDetails)
+
 	return res, nil
 }
 
@@ -183,6 +255,7 @@ func main() {
 
 	allCustomers = CustomerServices.FetchCustomerTable(db)
 	allOrders = OrderServices.FetchOrderTable(db)
+	allRest = RestaurantServices.FetchRestaurantTable(db)
 
 	lis, err := net.Listen("tcp", "0.0.0.0:5051")
 	if err != nil {

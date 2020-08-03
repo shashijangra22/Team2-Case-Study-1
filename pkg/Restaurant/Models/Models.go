@@ -2,7 +2,7 @@ package Models
 
 type Item struct {
 	Name     string
-	Price    float64
+	Price    float32
 }
 
 
@@ -11,6 +11,6 @@ type Rest struct {
 	Name string
 	Availability bool
 	Items   []Item
-	Rating   float64
+	Rating   float32
 	Category  string
 }

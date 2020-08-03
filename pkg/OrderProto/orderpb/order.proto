@@ -32,9 +32,9 @@ message Customer {
 }
 
 message Restaurant {
-    int64 RestaurantId = 1;
+    int64 Id = 1;
     string Name = 2;
-    bool Available = 3;
+    bool Availability = 3;
     repeated Item ItemLine = 4;
     float Rating = 5;
     string Category = 6;
@@ -69,12 +69,21 @@ message CustomerAllResponse{
 }
 
 message RestaurantRequest{
-   // Restaurant rest = 1;
+    Restaurant rest = 1;
+}
+message RestaurantPostResponse{
+    Restaurant res = 1;
 }
 
-message RestaurantResponse{
-    //repeated Restaurant res = 1;
-    string dummyRes = 1;
+message RestaurantAllResponse{
+    repeated Restaurant res = 1;
+}
+
+message SpecificRestaurantRequest{
+  int64 Id = 1;
+}
+message SpecificRestaurantResponse{
+  Restaurant res = 1;
 }
 
 message NoParamRequest {
@@ -97,18 +106,16 @@ message SpecificOrderResponse{
     Order res = 1;
 }
 
-message PostResponse {
-    string res = 1;
-}
 
 service QueryService {
     rpc AddOrder (OrderRequest) returns (OrderPostResponse) {}
     rpc AddCustomer (CustomerRequest) returns (CustomerPostResponse) {}
-    rpc AddRestaurant (RestaurantRequest) returns (PostResponse) {}
+    rpc AddRestaurant (RestaurantRequest) returns (RestaurantPostResponse) {}
 
     rpc GetOrders (NoParamRequest) returns (OrderResponse) {}
     rpc GetCustomers (NoParamRequest) returns (CustomerAllResponse) {}
-    rpc GetRestaurants (NoParamRequest) returns (RestaurantResponse) {}
+    rpc GetRestaurants (NoParamRequest) returns (RestaurantAllResponse) {}
     rpc GetACustomer (SpecificCustomerRequest) returns (SpecificCustomerResponse) {}
     rpc GetAnOrder (SpecificOrderRequest) returns (SpecificOrderResponse) {}
+    rpc GetARestaurant (SpecificRestaurantRequest) returns (SpecificRestaurantResponse) {}
 }

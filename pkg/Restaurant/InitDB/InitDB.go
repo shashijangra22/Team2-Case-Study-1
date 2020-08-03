@@ -26,8 +26,8 @@ func parseRecord(record []string) Models.Rest {
 	Price, _ := strconv.ParseFloat(record[4], 64)
 	Rating, _ := strconv.ParseFloat(record[5], 64)
 	Category := record[6]
-	itemObj := Models.Item{itemName, Price}
-	restObj := Models.Rest{ID, Name, Availablity, []Models.Item{itemObj}, Rating,Category}
+	itemObj := Models.Item{itemName, float32(Price)}
+	restObj := Models.Rest{ID, Name, Availablity, []Models.Item{itemObj}, float32(Rating),Category}
 	return restObj
 }
 

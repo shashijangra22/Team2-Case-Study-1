@@ -3,6 +3,8 @@ package main
 import (
 	CustomerModels "Team2CaseStudy1/pkg/Customer/Models"
 	OrderModels "Team2CaseStudy1/pkg/Order/Models"
+	RestaurantModels "Team2CaseStudy1/pkg/Restaurant/Models"
+
 	"Team2CaseStudy1/pkg/OrderProto/orderpb"
 	"encoding/json"
 	"fmt"
@@ -64,7 +66,7 @@ func GetAllRestaurants(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"response": res.DummyRes})
+	c.JSON(http.StatusOK, gin.H{"response": res.Res})
 
 }
 
@@ -105,6 +107,26 @@ func GetSpecificOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"response": res.Res})
 
 }
+
+// To get specific Rest
+func GetSpecificRest(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+
+	req := &orderpb.SpecificRestaurantRequest{Id: id}
+
+	res, err := queryServiceClient.GetARestaurant(c, req)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"response": res.Res})
+
+}
+
 
 // To place a new order
 func PostOrder(c *gin.Context) {
@@ -193,7 +215,44 @@ func PostCustomer(c *gin.Context) {
 
 // To place a new order
 func PostRestaurant(c *gin.Context) {
-	req := &orderpb.RestaurantRequest{}
+
+	body := c.Request.Body
+	byteContent, err := ioutil.ReadAll(body)
+	if err != nil {
+		fmt.Println("Sorry no content found: ", err.Error())
+	}
+
+	var NewRest RestaurantModels.Rest
+	err = json.Unmarshal(byteContent, &NewRest)
+
+	if err != nil {
+		fmt.Println("Sorry no content not in correct format: ", err.Error())
+	}
+
+	id := NewRest.ID
+	name := NewRest.Name
+	avail := NewRest.Availability
+	itemlist := NewRest.Items
+	rating := NewRest.Rating
+	categ := NewRest.Category
+
+	var itemline []*orderpb.Item
+
+	for i := range itemlist {
+		itemline = append(itemline, &orderpb.Item{
+			Name:  itemlist[i].Name,
+			Price: itemlist[i].Price,
+		})
+	}
+
+	req := &orderpb.RestaurantRequest{Rest: &orderpb.Restaurant{
+		Id: id,
+		Name: name,
+		Availability: avail,
+		ItemLine: itemline,
+		Rating: rating,
+		Category: categ,
+	}}
 
 	res, err := queryServiceClient.AddRestaurant(c, req)
 
@@ -207,6 +266,7 @@ func PostRestaurant(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"response": res.Res,
 	})
+
 }
 
 func main() {
@@ -234,7 +294,7 @@ func main() {
 	apiRouter.GET("/restaurants", GetAllRestaurants)
 	apiRouter.GET("/order/:id", GetSpecificOrder)
 	apiRouter.GET("/customer/:id", GetSpecificCustomer)
-
+	apiRouter.GET("/restaurant/:id", GetSpecificRest)
 	apiRouter.POST("/new-order", PostOrder)
 	apiRouter.POST("/new-customer", PostCustomer)
 	apiRouter.POST("/new-restaurant", PostRestaurant)
